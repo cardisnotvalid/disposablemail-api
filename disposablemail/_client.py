@@ -42,16 +42,17 @@ class DisposableMail:
         return response.text
 
     def wait_message(self, *, attempts: int = 10, delay: float = 3) -> Optional[Message]:
-        try:
-            while attempts > 0:
-                with spinner(f"Waiting message. Attempts left: {attempts}"):
-                    if len(mailbox := self.get_mailbox()) > 1:
-                        print(f"\r", end="\033[K", flush=True)
-                        return mailbox.pop(0)
-                    attempts -= 1
-                    time.sleep(delay)
-            else:
-                print(f"\r", end="\033[K", flush=True)
-                return None
-        except KeyboardInterrupt:
-            pass
+        while attempts > 0:
+            with spinner(f"Waiting message. Attempts left: {attempts}"):
+                if message := self._check_message():
+                    return message
+                attempts -= 1
+                time.sleep(delay)
+        print(f"\r", end="\033[K", flush=True)
+        return None
+
+    def _check_message(self) -> Optional[Message]:
+        if len(mailbox := self.get_mailbox()) > 1:
+            print(f"\r", end="\033[K", flush=True)
+            return mailbox[0]
+        return None
